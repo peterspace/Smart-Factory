@@ -1,0 +1,133 @@
+﻿FUNCTION_BLOCK "03 Conveyor"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      Estop : Bool;
+      "Conveyor sensor 1" : Bool;
+      "Conveyor sensor 2" : Bool;
+      "Conveyor sensor 3" : Bool;
+      "Conveyor sensor 4" : Bool;
+      "Conveyor sensor 5" : Bool;
+      "Running Torque" : Int;
+      "Running Temperature" : Int;
+   END_VAR
+
+   VAR_OUTPUT 
+      "Alarm Siren" : Bool;
+      "Start Light" : Bool;
+      "Reset Light" : Bool;
+      "Stop Light" : Bool;
+      "Stack Light Green" : Bool;
+      "Stack Light Yellow" : Bool;
+      "Stack Light Red" : Bool;
+      "Conveyor 2" : Bool;
+      "Conveyor 3" : Bool;
+      "Conveyor 4" : Bool;
+      "Drain 1" : Bool;
+      "Drain 2" : Bool;
+      "Drain 3" : Bool;
+      "Advanced Feeder" : Bool;
+      "Error Message" : Bool;
+   END_VAR
+
+   VAR 
+      ET : Time;
+      Error : Bool;
+   END_VAR
+
+
+BEGIN
+	
+	REGION Supply
+	    IF "Ready to Run" THEN
+	        // Statement section IF
+	        #"Advanced Feeder" := TRUE;
+	    END_IF;
+	    
+	    //CONVEYOR 2-5 CONTROL
+	    
+	    //Conveyor 2
+	    IF "Ready to Run" THEN
+	        IF #"Conveyor sensor 2" THEN
+	            #"Conveyor 2" := TRUE;
+	
+	            "TOF_2".TOF (IN := #"Conveyor sensor 2",
+	            PT := T#30s,
+	            Q => #"Conveyor 2",
+	            ET => #ET);
+	        END_IF
+	        ;
+	    END_IF;
+	    
+	    IF "Ready to Run" THEN
+	        IF #"Conveyor sensor 3" THEN
+	            #"Conveyor 3" := TRUE;
+	            
+	            "TOF_3".TOF (IN := #"Conveyor sensor 3",
+	            PT := T#30s,
+	            Q => #"Conveyor 3",
+	            ET => #ET);
+	            
+	        END_IF
+	        ;
+	    END_IF;
+	    
+	    IF "Ready to Run" THEN
+	        IF #"Conveyor sensor 4" THEN
+	            #"Conveyor 4" := TRUE;
+	            
+	            "TOF_4".TOF (IN := #"Conveyor sensor 4",
+	            PT := T#30s,
+	            Q => #"Conveyor 4",
+	            ET => #ET);
+	            
+	        END_IF
+	        ;
+	    END_IF;
+	    
+	           
+	END_REGION
+	
+	
+	REGION Predictive Maintenace
+	    
+	    IF "Ready to Run" THEN
+	        // Statement section IF
+	        
+	        // IF #"Running Torq > #"Rated Torque"OR #"Running Temperature"> #"Rated Temperature" THEN
+	        IF #"Running Torque" > 6 OR #"Running Temperature" > 30 THEN
+	            #"Error Message" := TRUE;
+	            
+	            "Timer_Error".TOF (IN := "Ready to Run",
+	            PT := T#300s,
+	            Q => #"Error Message",
+	            ET => #ET);
+	        END_IF;
+	    END_IF;
+	    
+	    IF "Ready to Run" THEN
+	        // Statement section IF
+	        
+	        // IF #"Running Torq > #"Rated Torque"OR #"Running Temperature"> #"Rated Temperature" THEN
+	        IF #"Running Torque" > 6 OR #"Running Temperature" > 30 THEN
+	            #"Estop" := TRUE;
+	            
+	            "Timer_Error".TOF(IN := "Ready to Run",
+	                              PT := T#600s,
+	                              Q => #"Error Message",
+	                              ET => #ET);
+	        END_IF;
+	    END_IF;
+	    
+	END_REGION
+	REGION End
+	    IF "Ready to Run" THEN
+	        #"Drain 1" := TRUE;
+	        #"Drain 2" := TRUE;
+	        #"Drain 3" := TRUE;
+	    END_IF;
+	    
+	END_REGION
+	
+END_FUNCTION_BLOCK
+
